@@ -418,3 +418,26 @@ pub fn run_wgpu(
     let wgpu_eframe = WgpuWinitApp::new(&event_loop, app_name, native_options, app_creator);
     run_and_exit(event_loop, wgpu_eframe)
 }
+
+// ----------------------------------------------------------------------------
+
+#[cfg(feature = "gdi")]
+pub fn run_gdi(
+    app_name: &str,
+    mut native_options: epi::NativeOptions,
+    app_creator: epi::AppCreator,
+) -> Result<()> {
+    use super::gdi_integration::GdiWinitApp;
+
+    #[cfg(not(target_os = "ios"))]
+    if native_options.run_and_return {
+        return with_event_loop(native_options, |event_loop, native_options| {
+            let gdi_eframe = GdiWinitApp::new(event_loop, app_name, native_options, app_creator);
+            run_and_return(event_loop, gdi_eframe)
+        })?;
+    }
+
+    let event_loop = create_event_loop(&mut native_options)?;
+    let gdi_eframe = GdiWinitApp::new(&event_loop, app_name, native_options, app_creator);
+    run_and_exit(event_loop, gdi_eframe)
+}

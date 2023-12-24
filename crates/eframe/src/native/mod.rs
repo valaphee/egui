@@ -13,3 +13,6 @@ mod glow_integration;
 
 #[cfg(feature = "wgpu")]
 mod wgpu_integration;
+
+#[cfg(feature = "gdi")]
+mod gdi_integration;

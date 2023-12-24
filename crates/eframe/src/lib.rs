@@ -158,11 +158,11 @@ pub use web::{WebLogger, WebRunner};
 // When compiling natively
 
 #[cfg(not(target_arch = "wasm32"))]
-#[cfg(any(feature = "glow", feature = "wgpu"))]
+#[cfg(any(feature = "glow", feature = "wgpu", feature = "gdi"))]
 mod native;
 
 #[cfg(not(target_arch = "wasm32"))]
-#[cfg(any(feature = "glow", feature = "wgpu"))]
+#[cfg(any(feature = "glow", feature = "wgpu", feature = "gdi"))]
 #[cfg(feature = "persistence")]
 pub use native::file_storage::storage_dir;
 
@@ -214,7 +214,7 @@ pub mod icon_data;
 /// # Errors
 /// This function can fail if we fail to set up a graphics context.
 #[cfg(not(target_arch = "wasm32"))]
-#[cfg(any(feature = "glow", feature = "wgpu"))]
+#[cfg(any(feature = "glow", feature = "wgpu", feature = "gdi"))]
 #[allow(clippy::needless_pass_by_value)]
 pub fn run_native(
     app_name: &str,
@@ -233,15 +233,6 @@ pub fn run_native(
 
     let renderer = native_options.renderer;
 
-    #[cfg(all(feature = "glow", feature = "wgpu"))]
-    {
-        match renderer {
-            Renderer::Glow => "glow",
-            Renderer::Wgpu => "wgpu",
-        };
-        log::info!("Both the glow and wgpu renderers are available. Using {renderer}.");
-    }
-
     match renderer {
         #[cfg(feature = "glow")]
         Renderer::Glow => {
@@ -253,6 +244,12 @@ pub fn run_native(
         Renderer::Wgpu => {
             log::debug!("Using the wgpu renderer");
             native::run::run_wgpu(app_name, native_options, app_creator)
+        }
+
+        #[cfg(feature = "gdi")]
+        Renderer::Gdi => {
+            log::debug!("Using the gdi renderer");
+            native::run::run_gdi(app_name, native_options, app_creator)
         }
     }
 }
@@ -292,7 +289,7 @@ pub fn run_native(
 /// # Errors
 /// This function can fail if we fail to set up a graphics context.
 #[cfg(not(target_arch = "wasm32"))]
-#[cfg(any(feature = "glow", feature = "wgpu"))]
+#[cfg(any(feature = "glow", feature = "wgpu", feature = "gdi"))]
 pub fn run_simple_native(
     app_name: &str,
     native_options: NativeOptions,

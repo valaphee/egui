@@ -10,7 +10,7 @@
 use std::any::Any;
 
 #[cfg(not(target_arch = "wasm32"))]
-#[cfg(any(feature = "glow", feature = "wgpu"))]
+#[cfg(any(feature = "glow", feature = "wgpu", feature = "gdi"))]
 pub use crate::native::winit_integration::UserEvent;
 
 #[cfg(not(target_arch = "wasm32"))]
@@ -21,7 +21,7 @@ use raw_window_handle::{
 use static_assertions::assert_not_impl_any;
 
 #[cfg(not(target_arch = "wasm32"))]
-#[cfg(any(feature = "glow", feature = "wgpu"))]
+#[cfg(any(feature = "glow", feature = "wgpu", feature = "gdi"))]
 pub use winit::{event_loop::EventLoopBuilder, window::WindowBuilder};
 
 /// Hook into the building of an event loop before it is run
@@ -29,7 +29,7 @@ pub use winit::{event_loop::EventLoopBuilder, window::WindowBuilder};
 /// You can configure any platform specific details required on top of the default configuration
 /// done by `EFrame`.
 #[cfg(not(target_arch = "wasm32"))]
-#[cfg(any(feature = "glow", feature = "wgpu"))]
+#[cfg(any(feature = "glow", feature = "wgpu", feature = "gdi"))]
 pub type EventLoopBuilderHook = Box<dyn FnOnce(&mut EventLoopBuilder<UserEvent>)>;
 
 /// Hook into the building of a the native window.
@@ -37,7 +37,7 @@ pub type EventLoopBuilderHook = Box<dyn FnOnce(&mut EventLoopBuilder<UserEvent>)
 /// You can configure any platform specific details required on top of the default configuration
 /// done by `eframe`.
 #[cfg(not(target_arch = "wasm32"))]
-#[cfg(any(feature = "glow", feature = "wgpu"))]
+#[cfg(any(feature = "glow", feature = "wgpu", feature = "gdi"))]
 pub type WindowBuilderHook = Box<dyn FnOnce(egui::ViewportBuilder) -> egui::ViewportBuilder>;
 
 /// This is how your app is created.
@@ -270,7 +270,7 @@ pub struct NativeOptions {
     pub hardware_acceleration: HardwareAcceleration,
 
     /// What rendering backend to use.
-    #[cfg(any(feature = "glow", feature = "wgpu"))]
+    #[cfg(any(feature = "glow", feature = "wgpu", feature = "gdi"))]
     pub renderer: Renderer,
 
     /// Try to detect and follow the system preferred setting for dark vs light mode.
@@ -308,7 +308,7 @@ pub struct NativeOptions {
     /// event loop before it is run.
     ///
     /// Note: A [`NativeOptions`] clone will not include any `event_loop_builder` hook.
-    #[cfg(any(feature = "glow", feature = "wgpu"))]
+    #[cfg(any(feature = "glow", feature = "wgpu", feature = "gdi"))]
     pub event_loop_builder: Option<EventLoopBuilderHook>,
 
     /// Hook into the building of a window.
@@ -317,7 +317,7 @@ pub struct NativeOptions {
     /// window appearance.
     ///
     /// Note: A [`NativeOptions`] clone will not include any `window_builder` hook.
-    #[cfg(any(feature = "glow", feature = "wgpu"))]
+    #[cfg(any(feature = "glow", feature = "wgpu", feature = "gdi"))]
     pub window_builder: Option<WindowBuilderHook>,
 
     #[cfg(feature = "glow")]
@@ -349,10 +349,10 @@ impl Clone for NativeOptions {
         Self {
             viewport: self.viewport.clone(),
 
-            #[cfg(any(feature = "glow", feature = "wgpu"))]
+            #[cfg(any(feature = "glow", feature = "wgpu", feature = "gdi"))]
             event_loop_builder: None, // Skip any builder callbacks if cloning
 
-            #[cfg(any(feature = "glow", feature = "wgpu"))]
+            #[cfg(any(feature = "glow", feature = "wgpu", feature = "gdi"))]
             window_builder: None, // Skip any builder callbacks if cloning
 
             #[cfg(feature = "wgpu")]
@@ -375,17 +375,17 @@ impl Default for NativeOptions {
             stencil_buffer: 0,
             hardware_acceleration: HardwareAcceleration::Preferred,
 
-            #[cfg(any(feature = "glow", feature = "wgpu"))]
+            #[cfg(any(feature = "glow", feature = "wgpu", feature = "gdi"))]
             renderer: Renderer::default(),
 
             follow_system_theme: cfg!(target_os = "macos") || cfg!(target_os = "windows"),
             default_theme: Theme::Dark,
             run_and_return: true,
 
-            #[cfg(any(feature = "glow", feature = "wgpu"))]
+            #[cfg(any(feature = "glow", feature = "wgpu", feature = "gdi"))]
             event_loop_builder: None,
 
-            #[cfg(any(feature = "glow", feature = "wgpu"))]
+            #[cfg(any(feature = "glow", feature = "wgpu", feature = "gdi"))]
             window_builder: None,
 
             #[cfg(feature = "glow")]
@@ -509,7 +509,7 @@ pub enum WebGlContextOption {
 /// What rendering backend to use.
 ///
 /// You need to enable the "glow" and "wgpu" features to have a choice.
-#[cfg(any(feature = "glow", feature = "wgpu"))]
+#[cfg(any(feature = "glow", feature = "wgpu", feature = "gdi"))]
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 #[cfg_attr(feature = "serde", derive(serde::Deserialize, serde::Serialize))]
 #[cfg_attr(feature = "serde", serde(rename_all = "snake_case"))]
@@ -521,32 +521,44 @@ pub enum Renderer {
     /// Use [`egui_wgpu`] renderer for [`wgpu`](https://github.com/gfx-rs/wgpu).
     #[cfg(feature = "wgpu")]
     Wgpu,
+
+    #[cfg(feature = "gdi")]
+    Gdi,
 }
 
-#[cfg(any(feature = "glow", feature = "wgpu"))]
+#[cfg(any(feature = "glow", feature = "wgpu", feature = "gdi"))]
 impl Default for Renderer {
     fn default() -> Self {
         #[cfg(not(feature = "glow"))]
         #[cfg(not(feature = "wgpu"))]
+        #[cfg(not(feature = "gdi"))]
         compile_error!("eframe: you must enable at least one of the rendering backend features: 'glow' or 'wgpu'");
 
         #[cfg(feature = "glow")]
         #[cfg(not(feature = "wgpu"))]
+        #[cfg(not(feature = "gdi"))]
         return Self::Glow;
 
         #[cfg(not(feature = "glow"))]
         #[cfg(feature = "wgpu")]
+        #[cfg(not(feature = "gdi"))]
         return Self::Wgpu;
+
+        #[cfg(not(feature = "glow"))]
+        #[cfg(not(feature = "wgpu"))]
+        #[cfg(feature = "gdi")]
+        return Self::Gdi;
 
         // By default, only the `glow` feature is enabled, so if the user added `wgpu` to the feature list
         // they probably wanted to use wgpu:
         #[cfg(feature = "glow")]
         #[cfg(feature = "wgpu")]
+        #[cfg(feature = "gdi")]
         return Self::Wgpu;
     }
 }
 
-#[cfg(any(feature = "glow", feature = "wgpu"))]
+#[cfg(any(feature = "glow", feature = "wgpu", feature = "gdi"))]
 impl std::fmt::Display for Renderer {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
@@ -555,11 +567,14 @@ impl std::fmt::Display for Renderer {
 
             #[cfg(feature = "wgpu")]
             Self::Wgpu => "wgpu".fmt(f),
+
+            #[cfg(feature = "gdi")]
+            Self::Gdi => "gdi".fmt(f),
         }
     }
 }
 
-#[cfg(any(feature = "glow", feature = "wgpu"))]
+#[cfg(any(feature = "glow", feature = "wgpu", feature = "wgpu"))]
 impl std::str::FromStr for Renderer {
     type Err = String;
 
@@ -570,6 +585,9 @@ impl std::str::FromStr for Renderer {
 
             #[cfg(feature = "wgpu")]
             "wgpu" => Ok(Self::Wgpu),
+
+            #[cfg(feature = "gdi")]
+            "gdi" => Ok(Self::Gdi),
 
             _ => Err(format!("eframe renderer {name:?} is not available. Make sure that the corresponding eframe feature is enabled."))
         }

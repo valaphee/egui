@@ -101,6 +101,8 @@ x11 = ["egui-winit/x11"]
 ## This is used to generate images for examples.
 __screenshot = []
 
+gdi = []
+
 [dependencies]
 egui = { version = "0.24.1", path = "../egui", default-features = false, features = [
   "bytemuck",
